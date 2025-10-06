@@ -1,0 +1,436 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Trade Tracker{% endblock %}
+
+{% block content %}
+<!-- Portfolio Summary -->
+<div class="portfolio-summary">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="summary-card">
+                <h5>Total Capital</h5>
+                <div class="value">${{ "%.2f"|format(portfolio_summary.total_capital) }}</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="summary-card">
+                <h5>Realized P&L</h5>
+                <div class="value {% if portfolio_summary.realized_pnl >= 0 %}pnl-positive{% else %}pnl-negative{% endif %}">
+                    ${{ "%.2f"|format(portfolio_summary.realized_pnl) }}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="summary-card">
+                <h5>Open Positions</h5>
+                <div class="value">{{ portfolio_summary.open_positions }}</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="summary-card">
+                <h5>Win Rate</h5>
+                <div class="value">{{ "%.1f"|format(portfolio_summary.win_rate) }}%</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Navigation Tabs -->
+<ul class="nav nav-tabs" id="dashboardTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="add-trade-tab" data-bs-toggle="tab" data-bs-target="#add-trade" type="button" role="tab">
+            <i class="fas fa-plus"></i> Add Trade
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="trade-log-tab" data-bs-toggle="tab" data-bs-target="#trade-log" type="button" role="tab">
+            <i class="fas fa-list"></i> Trade Log
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="analytics-tab" data-bs-toggle="tab" data-bs-target="#analytics" type="button" role="tab">
+            <i class="fas fa-chart-bar"></i> Analytics
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="dashboardTabsContent">
+    <!-- Add Trade Tab -->
+    <div class="tab-pane fade show active" id="add-trade" role="tabpanel">
+        <div class="mt-4">
+            <h3><i class="fas fa-plus"></i> Add New Trade</h3>
+            <form id="tradeForm">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="ticker" class="form-label">Ticker Symbol *</label>
+                            <input type="text" class="form-control" id="ticker" name="ticker" required placeholder="e.g., AAPL">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="trade_type" class="form-label">Trade Type *</label>
+                            <select class="form-select" id="trade_type" name="trade_type" required>
+                                <option value="">Select Type</option>
+                                <option value="call">Call Option</option>
+                                <option value="put">Put Option</option>
+                                <option value="spread">Spread</option>
+                                <option value="straddle">Straddle</option>
+                                <option value="strangle">Strangle</option>
+                                <option value="iron-condor">Iron Condor</option>
+                                <option value="butterfly">Butterfly</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="entry_date" class="form-label">Entry Date *</label>
+                            <input type="date" class="form-control" id="entry_date" name="entry_date" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="entry_price" class="form-label">Entry Price *</label>
+                            <input type="number" class="form-control" id="entry_price" name="entry_price" step="0.01" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="strike_price" class="form-label">Strike Price</label>
+                            <input type="number" class="form-control" id="strike_price" name="strike_price" step="0.01">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="expiration_date" class="form-label">Expiration Date</label>
+                            <input type="date" class="form-control" id="expiration_date" name="expiration_date">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="quantity" class="form-label">Quantity *</label>
+                            <input type="number" class="form-control" id="quantity" name="quantity" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="exit_date" class="form-label">Exit Date</label>
+                            <input type="date" class="form-control" id="exit_date" name="exit_date">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="exit_price" class="form-label">Exit Price</label>
+                            <input type="number" class="form-control" id="exit_price" name="exit_price" step="0.01">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="entry_reason" class="form-label">Entry Reason *</label>
+                    <textarea class="form-control" id="entry_reason" name="entry_reason" rows="3" required placeholder="Why are you taking this trade?"></textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label for="exit_reason" class="form-label">Exit Reason</label>
+                    <textarea class="form-control" id="exit_reason" name="exit_reason" rows="3" placeholder="Why did you exit this trade?"></textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label for="notes" class="form-label">Notes</label>
+                    <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Additional notes about this trade"></textarea>
+                </div>
+
+                <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Trade
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="clearForm()">
+                        <i class="fas fa-eraser"></i> Clear Form
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Trade Log Tab -->
+    <div class="tab-pane fade" id="trade-log" role="tabpanel">
+        <div class="mt-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3><i class="fas fa-list"></i> Trade Log</h3>
+                <div class="d-flex gap-2">
+                    <input type="text" class="form-control" id="searchTrades" placeholder="Search trades..." style="width: 250px;">
+                    <select class="form-select" id="statusFilter" style="width: 150px;">
+                        <option value="all">All Trades</option>
+                        <option value="open">Open</option>
+                        <option value="closed">Closed</option>
+                    </select>
+                </div>
+            </div>
+            <div id="tradesList">
+                {% for trade in trades %}
+                <div class="card trade-card {{ trade.status }}">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h5 class="card-title mb-0">{{ trade.ticker }} - {{ trade.trade_type.replace('-', ' ').title() }}</h5>
+                                    <span class="badge bg-{% if trade.status == 'open' %}warning{% else %}success{% endif %}">
+                                        {{ trade.status.title() }}
+                                    </span>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <small class="text-muted">Entry Date</small><br>
+                                        <strong>{{ trade.entry_date.strftime('%Y-%m-%d') }}</strong>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <small class="text-muted">Entry Price</small><br>
+                                        <strong>${{ "%.2f"|format(trade.entry_price) }}</strong>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <small class="text-muted">Quantity</small><br>
+                                        <strong>{{ trade.quantity }}</strong>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <small class="text-muted">P&L</small><br>
+                                        <strong class="{% if trade.pnl > 0 %}pnl-positive{% elif trade.pnl < 0 %}pnl-negative{% endif %}">
+                                            {% if trade.status == 'closed' %}${{ "%.2f"|format(trade.pnl) }}{% else %}Open{% endif %}
+                                        </strong>
+                                    </div>
+                                </div>
+                                {% if trade.strike_price %}
+                                <div class="row mt-2">
+                                    <div class="col-md-3">
+                                        <small class="text-muted">Strike Price</small><br>
+                                        <strong>${{ "%.2f"|format(trade.strike_price) }}</strong>
+                                    </div>
+                                    {% if trade.expiration_date %}
+                                    <div class="col-md-3">
+                                        <small class="text-muted">Expiration</small><br>
+                                        <strong>{{ trade.expiration_date.strftime('%Y-%m-%d') }}</strong>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                                <div class="mt-2">
+                                    <small class="text-muted">Entry Reason:</small><br>
+                                    <span>{{ trade.entry_reason }}</span>
+                                </div>
+                                {% if trade.exit_reason %}
+                                <div class="mt-2">
+                                    <small class="text-muted">Exit Reason:</small><br>
+                                    <span>{{ trade.exit_reason }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <div class="d-grid gap-2">
+                                    {% if trade.status == 'open' %}
+                                    <button class="btn btn-warning btn-sm" onclick="closeTrade({{ trade.id }})">
+                                        <i class="fas fa-times"></i> Close Trade
+                                    </button>
+                                    {% endif %}
+                                    <button class="btn btn-primary btn-sm" onclick="editTrade({{ trade.id }})">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </button>
+                                    <button class="btn btn-danger btn-sm" onclick="deleteTrade({{ trade.id }})">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Analytics Tab -->
+    <div class="tab-pane fade" id="analytics" role="tabpanel">
+        <div class="mt-4">
+            <h3><i class="fas fa-chart-bar"></i> Trade Analytics</h3>
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h5 class="card-title">Win Rate</h5>
+                            <h2 class="text-primary">{{ "%.1f"|format(portfolio_summary.win_rate) }}%</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h5 class="card-title">Average Win</h5>
+                            <h2 class="text-success">${{ "%.2f"|format(portfolio_summary.avg_win) }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h5 class="card-title">Average Loss</h5>
+                            <h2 class="text-danger">${{ "%.2f"|format(portfolio_summary.avg_loss) }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h5 class="card-title">Profit Factor</h5>
+                            <h2 class="text-info">{{ "%.2f"|format(portfolio_summary.profit_factor) }}</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Set current date
+    document.getElementById('entry_date').value = new Date().toISOString().split('T')[0];
+
+    // Trade form submission
+    document.getElementById('tradeForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const tradeData = Object.fromEntries(formData.entries());
+        
+        // Convert empty strings to null for optional fields
+        Object.keys(tradeData).forEach(key => {
+            if (tradeData[key] === '') {
+                tradeData[key] = null;
+            }
+        });
+        
+        fetch('/api/trades', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(tradeData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                showNotification(data.error, 'error');
+            } else {
+                showNotification('Trade added successfully!', 'success');
+                clearForm();
+                // Refresh the page to show updated data
+                setTimeout(() => location.reload(), 1000);
+            }
+        })
+        .catch(error => {
+            showNotification('Error adding trade', 'error');
+        });
+    });
+
+    function clearForm() {
+        document.getElementById('tradeForm').reset();
+        document.getElementById('entry_date').value = new Date().toISOString().split('T')[0];
+    }
+
+    function closeTrade(tradeId) {
+        const exitPrice = prompt('Enter exit price:');
+        if (exitPrice === null) return;
+        
+        const exitDate = prompt('Enter exit date (YYYY-MM-DD) or leave blank for today:');
+        const exitReason = prompt('Enter exit reason:') || '';
+        
+        const tradeData = {
+            exit_price: parseFloat(exitPrice),
+            exit_date: exitDate || new Date().toISOString().split('T')[0],
+            exit_reason: exitReason
+        };
+        
+        fetch(`/api/trades/${tradeId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(tradeData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                showNotification(data.error, 'error');
+            } else {
+                showNotification('Trade closed successfully!', 'success');
+                setTimeout(() => location.reload(), 1000);
+            }
+        })
+        .catch(error => {
+            showNotification('Error closing trade', 'error');
+        });
+    }
+
+    function editTrade(tradeId) {
+        // This would open a modal or navigate to an edit form
+        showNotification('Edit functionality coming soon!', 'info');
+    }
+
+    function deleteTrade(tradeId) {
+        if (confirm('Are you sure you want to delete this trade?')) {
+            fetch(`/api/trades/${tradeId}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    showNotification(data.error, 'error');
+                } else {
+                    showNotification('Trade deleted successfully!', 'success');
+                    setTimeout(() => location.reload(), 1000);
+                }
+            })
+            .catch(error => {
+                showNotification('Error deleting trade', 'error');
+            });
+        }
+    }
+
+    // Search functionality
+    document.getElementById('searchTrades').addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        const tradeCards = document.querySelectorAll('.trade-card');
+        
+        tradeCards.forEach(card => {
+            const text = card.textContent.toLowerCase();
+            card.style.display = text.includes(searchTerm) ? 'block' : 'none';
+        });
+    });
+
+    // Status filter
+    document.getElementById('statusFilter').addEventListener('change', function() {
+        const status = this.value;
+        const tradeCards = document.querySelectorAll('.trade-card');
+        
+        tradeCards.forEach(card => {
+            if (status === 'all' || card.classList.contains(status)) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    });
+</script>
+{% endblock %}
