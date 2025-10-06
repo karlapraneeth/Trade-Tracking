@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome - Trade Tracker{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8 text-center">
+        <h1 class="display-4 mb-4">
+            <i class="fas fa-chart-line text-primary"></i>
+            Robinhood Options Trade Tracker
+        </h1>
+        <p class="lead mb-5">
+            Track your options trades with detailed entry/exit information, 
+            reasons for trades, and comprehensive analytics. Sync your data with GitHub for backup and collaboration.
+        </p>
+        
+        <div class="row mb-5">
+            <div class="col-md-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-plus-circle fa-3x text-primary mb-3"></i>
+                        <h5 class="card-title">Track Trades</h5>
+                        <p class="card-text">Record entry and exit details, reasons, and notes for each trade.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-chart-bar fa-3x text-success mb-3"></i>
+                        <h5 class="card-title">Analytics</h5>
+                        <p class="card-text">View win rates, P&L analysis, and performance metrics.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="fab fa-github fa-3x text-dark mb-3"></i>
+                        <h5 class="card-title">GitHub Sync</h5>
+                        <p class="card-text">Automatically sync your trade data with GitHub for backup and version control.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+            <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg me-md-2">
+                <i class="fas fa-sign-in-alt"></i> Login
+            </a>
+            <a href="{{ url_for('register') }}" class="btn btn-outline-primary btn-lg">
+                <i class="fas fa-user-plus"></i> Register
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
